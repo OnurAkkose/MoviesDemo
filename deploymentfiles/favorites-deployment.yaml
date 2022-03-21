@@ -1,0 +1,71 @@
+apiVersion: v1
+items:  
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: favorites-api
+    spec:
+      type: ClusterIP
+      selector:
+        app: favorites-api
+      ports:
+        - protocol: TCP
+          port: 80
+          targetPort: 8000
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: favorites-api
+    spec:
+      selector:
+        matchLabels:
+          app: favorites-api
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: favorites-api
+        spec:
+          containers:
+            - name: favorites-api
+              image: "favorites"
+              imagePullPolicy: Never
+              env:
+              - name: MONGODB_HOST
+                valueFrom:
+                   configMapKeyRef:
+                    name: mongodb-config
+                    key: host
+              - name: MONGODB_PORT
+                valueFrom:
+                   configMapKeyRef:
+                    name: mongodb-config
+                    key: port
+              - name: MONGODB_USER
+                valueFrom:
+                   secretKeyRef:
+                    name: mongodb-secret
+                    key: username
+              - name: MONGODB_AUTH_MECHANISM
+                valueFrom:
+                   configMapKeyRef:
+                    name: mongodb-config
+                    key: auth_mechanism
+              - name: MONGODB_PASSWORD
+                valueFrom:
+                   secretKeyRef:
+                    name: mongodb-secret
+                    key: password
+              - name: MONGODB_DATABASE
+                value: "favorites"       
+              volumeMounts:
+              - name: varlog
+                mountPath: /var/log
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - name: varlog
+            hostPath:
+              path: /var/log         
+          
+kind: List
+metadata: {}
